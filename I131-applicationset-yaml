@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: I131-applicationset
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: in-cluster
+            environment: dev
+          - cluster: in-cluster
+            environment: staging
+          - cluster: in-cluster
+            environment: prod
+  template:
+    metadata:
+      name: '{{.Values.environment}}'
+    spec:
+      project: default
+      source:
+        repoURL: 'https://your-repo-url.git' #rapid-frontend
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          releaseName: '{{environment}}'
+          values: |
+            environment: {{environment}}
+          valuesFiles:
+            - environments/{{environment}}/I131-values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{environment}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
